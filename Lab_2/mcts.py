@@ -8,6 +8,7 @@ class MCTS:
         self.N = defaultdict(int) 
         self.children = dict() 
         self.exploration_weight = exploration_weight
+        self.nodes_visited = 0
 
     def choose(self, node):
         if node.is_terminal():
@@ -24,6 +25,7 @@ class MCTS:
         return max(self.children[node], key=score)
 
     def do_rollout(self, node):
+        self.nodes_visited = 0
         path = self._select(node)
         leaf = path[-1]
         self._expand(leaf)
@@ -34,12 +36,14 @@ class MCTS:
         path = []
         while True:
             path.append(node)
+            self.nodes_visited += 1
             if node not in self.children or not self.children[node]:
                 return path
             unexplored = self.children[node] - self.children.keys()
             if unexplored:
                 n = unexplored.pop()
                 path.append(n)
+                self.nodes_visited += 1
                 return path
             node = self._uct_select(node) 
 
@@ -51,6 +55,7 @@ class MCTS:
     def _simulate(self, node):
         invert_reward = True
         while True:
+            self.nodes_visited += 1
             if node.is_terminal():
                 reward = node.reward()
                 return 1 - reward if invert_reward else reward
@@ -74,6 +79,9 @@ class MCTS:
             )
 
         return max(self.children[node], key=uct)
+
+    def get_nodes_visited(self):
+        return self.nodes_visited
 
 class Node(ABC):
     @abstractmethod
